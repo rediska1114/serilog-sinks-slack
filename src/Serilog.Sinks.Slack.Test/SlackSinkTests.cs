@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Serilog.Sinks.Slack.Test
 {
-    [TestClass]
     public class SlackSinkTests
     {
-        [TestMethod]
+        [Fact]
         public void SendMessageTests()
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .WriteTo.Slack("xxxxxx", "#xxx", "I ghost", ":ghost:")
+                .WriteTo.Slack("https://hooks.slack.com/services/T/B/M")
                 .CreateLogger();
 
             Log.Logger.Verbose("1 Verbose");
@@ -31,8 +29,6 @@ namespace Serilog.Sinks.Slack.Test
             Log.Logger.Information("5 Information");
             Log.Logger.Warning("6 Warning");
             Log.Logger.Debug("7 Formatting {myProp}", new { myProp = "test" });
-
-            Thread.Sleep(5000);
         }
     }
 }

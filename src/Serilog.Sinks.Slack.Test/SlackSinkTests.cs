@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Xunit;
 
 namespace Serilog.Sinks.Slack.Test
@@ -10,7 +11,7 @@ namespace Serilog.Sinks.Slack.Test
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .WriteTo.Slack("https://hooks.slack.com/services/T/B/M")
+                .WriteTo.Slack("")
                 .CreateLogger();
 
             Log.Logger.Verbose("1 Verbose");
@@ -29,6 +30,8 @@ namespace Serilog.Sinks.Slack.Test
             Log.Logger.Information("5 Information");
             Log.Logger.Warning("6 Warning");
             Log.Logger.Debug("7 Formatting {myProp}", new { myProp = "test" });
+            
+            Thread.Sleep(5000);
         }
     }
 }

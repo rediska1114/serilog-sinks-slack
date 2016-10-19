@@ -110,16 +110,41 @@ namespace Serilog.Sinks.Slack
             if (logEvent.Exception == null)
                 return attachments;
 
+            var stackTrace = logEvent.Exception.StackTrace.Split('\n');
+            var filteredStackTrace = new List<string>();
+            var lastWasAsync = false;
+
+            foreach (var line in stackTrace)
+            {
+                if (line.TrimStart().StartsWith("at System.Runtime.CompilerServices.")
+                    )
+                {
+                    lastWasAsync = true;
+                    continue;
+                }
+                
+                if (lastWasAsync)
+                {
+                    filteredStackTrace.Add(" -- (async)\r");
+                }
+
+                filteredStackTrace.Add(line);
+
+                lastWasAsync = false;
+            }
+
+            var finalStackTrace = string.Join("\n", filteredStackTrace.ToArray());
+
             attachments.Add(new
             {
                 title = "Exception",
-                fallback = $"Exception: {logEvent.Exception.Message} \n {logEvent.Exception.StackTrace}",
+                fallback = $"Exception: {logEvent.Exception.Message} \n {finalStackTrace}",
                 color = Colors[LogEventLevel.Fatal],
                 fields = new List<dynamic>
                 {
                     new {title = "Message", value = logEvent.Exception.Message},
                     new {title = "Type", value = "`" + logEvent.Exception.GetType().Name + "`"},
-                    new {title = "Stack Trace", value = "```" + logEvent.Exception.StackTrace + "```", @short = false}
+                    new {title = "Stack Trace", value = "```" + finalStackTrace + "```", @short = false}
                 },
                 mrkdwn_in = new List<string> { "fields" }
             });

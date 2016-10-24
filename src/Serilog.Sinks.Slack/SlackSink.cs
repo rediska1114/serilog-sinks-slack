@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Globalization;
+using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog.Events;
@@ -35,6 +38,7 @@ namespace Serilog.Sinks.Slack
         private readonly string _customUserName;
 
         private readonly string _customIcon;
+        private JsonSerializer _serializer;
 
         #endregion
 
@@ -58,6 +62,7 @@ namespace Serilog.Sinks.Slack
             _customChannel = customChannel;
             _customUserName = customUserName;
             _customIcon = customIcon;
+            _serializer = new JsonSerializer();
         }
 
         #endregion
@@ -73,10 +78,23 @@ namespace Serilog.Sinks.Slack
             {
                 var message = CreateMessage(logEvent, _customChannel, _customUserName, _customIcon);
 
-                var json = JsonConvert.SerializeObject(message, Newtonsoft.Json.Formatting.Indented);
+                var json = SerializeMessage(message);
 
                 await Client.PostAsync(_webhookUrl, new StringContent(json));
             }
+        }
+
+        //we do this to ignore any default JSON Serialization settings
+        private string SerializeMessage(dynamic message)
+        {
+            var sb = new StringBuilder(256);
+            var stringWriter = new StringWriter(sb, CultureInfo.InvariantCulture);
+            using (var jsonWriter = new JsonTextWriter(stringWriter))
+            {
+                jsonWriter.Formatting = Newtonsoft.Json.Formatting.Indented;
+                _serializer.Serialize(jsonWriter, message);
+            }
+            return sb.ToString();
         }
 
         private static dynamic CreateMessage(LogEvent logEvent, string channel, string username, string emoji)
@@ -122,7 +140,7 @@ namespace Serilog.Sinks.Slack
                     lastWasAsync = true;
                     continue;
                 }
-                
+
                 if (lastWasAsync)
                 {
                     filteredStackTrace.Add(" -- (async)\r");
